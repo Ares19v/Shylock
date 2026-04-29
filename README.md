@@ -1,48 +1,153 @@
-# Shylock — Market Sentiment Intelligence
+# SHYLOCK — Market Sentiment Intelligence
 
-![Build Status](https://img.shields.io/github/actions/workflow/status/Ares19v/Shylock/ci.yml?branch=main)
-![License](https://img.shields.io/badge/License-MIT-blue.svg)
+<div align="center">
 
-**Shylock** is a professional-grade Market Sentiment Intelligence platform designed to aggregate and analyze financial sentiment from multiple sources (Reddit, News, StockTwits) in real-time. It leverages advanced NLP to provide actionable directional stock signals.
+```
+███████╗██╗  ██╗██╗   ██╗██╗      ██████╗  ██████╗██╗  ██╗
+██╔════╝██║  ██║╚██╗ ██╔╝██║     ██╔═══██╗██╔════╝██║ ██╔╝
+███████╗███████║ ╚████╔╝ ██║     ██║   ██║██║     █████╔╝
+╚════██║██╔══██║  ╚██╔╝  ██║     ██║   ██║██║     ██╔═██╗
+███████║██║  ██║   ██║   ███████╗╚██████╔╝╚██████╗██║  ██╗
+╚══════╝╚═╝  ╚═╝   ╚═╝   ╚══════╝ ╚═════╝  ╚═════╝╚═╝  ╚═╝
+```
+
+**Real-time financial sentiment intelligence powered by FinBERT + Groq**
+
+[![CI](https://img.shields.io/github/actions/workflow/status/Ares19v/Shylock/ci.yml?branch=main&label=CI&logo=github)](https://github.com/Ares19v/Shylock/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://python.org)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](https://react.dev)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+
+</div>
+
+---
+
+## What It Does
+
+Shylock ingests live data from **Reddit**, **NewsAPI**, and **Finnhub**, runs every article and post through **ProsusAI/FinBERT** (a transformer model pre-trained on financial text), and surfaces the aggregated market sentiment as actionable directional signals — all within seconds of hitting "Generate Report".
+
+---
 
 ## Features
-- **Real-time Data Ingestion:** Scrapes live data from Reddit, News APIs, and StockTwits.
-- **FinBERT NLP Analysis:** Utilizes the state-of-the-art `ProsusAI/finbert` model for highly accurate financial sentiment classification.
-- **Institutional Aesthetic UI:** A clean, minimalist React frontend inspired by Bloomberg Terminals.
-- **Directional Signals:** Computes rule-based weighted scores using aggregated sentiment and technical indicators (RSI/MACD via `yfinance`).
+
+| Feature | Description |
+|---|---|
+| **Sentiment Analysis** | FinBERT scores every Reddit post and news article as Bullish / Bearish / Neutral |
+| **Price Momentum** | Live price charts via `yfinance` — no API key required |
+| **Directional Signal** | Rule-based weighted score combining sentiment (60%) + RSI (25%) + MACD (15%) |
+| **Stock Screener** | Filter 50+ tickers across 7 sectors by signal type and momentum |
+| **Compare** | Side-by-side sentiment + technical analysis for any two tickers |
+| **Watchlist** | Track saved tickers with live price & RSI — persisted in browser |
+| **Trade Journal** | Private markdown notes stored locally — no server needed |
+| **AI Assistant** | Groq-powered chatbot (Llama 3.3 70B) that explains the platform |
+| **PDF Export** | One-click export of the full dashboard as a timestamped PDF |
+| **Auth** | Local sign-up / login (demo auth — localStorage) |
+
+---
 
 ## Tech Stack
-- **Backend:** Python, FastAPI, HuggingFace (`transformers`, `torch`), `yfinance`
-- **Frontend:** React, Vite, Tailwind CSS, Recharts
-- **Containerization:** Docker & Docker Compose
-- **CI/CD:** GitHub Actions
 
-## Installation (Windows)
+**Backend**
+- Python 3.10 · FastAPI · Uvicorn
+- HuggingFace `transformers` + `torch` (FinBERT)
+- `yfinance` · `ta` (technical indicators)
+- Groq SDK (Llama 3.3 70B)
+- `httpx` · `finnhub-python` · `python-dotenv`
 
-1. **Quick Start:** 
-   Run `INSTALL.bat` to automatically set up the Python virtual environment and install Node modules.
-2. **Launch:** 
-   Run `Run_Project.bat` to boot the FastAPI backend (Port 8001) and React frontend (Port 5173).
-3. **Teardown:**
-   Run `UNINSTALL.bat` to cleanly remove the virtual environment and node modules.
+**Frontend**
+- React 18 · Vite 8 · Tailwind CSS 3
+- Recharts · jsPDF · html2canvas · react-markdown
 
-## Deployment (Docker)
+**Infrastructure**
+- Docker + Docker Compose
+- Nginx (production frontend)
+- GitHub Actions CI/CD
 
-To deploy the full stack via Docker:
+---
+
+## Quick Start (Windows)
 
 ```bash
+# 1. Clone
+git clone https://github.com/Ares19v/Shylock.git
+cd Shylock
+
+# 2. Add your API keys
+copy backend\.env.example backend\.env
+# Edit backend\.env and fill in your keys
+
+# 3. Install
+INSTALL.bat
+
+# 4. Run
+Run_Project.bat
+```
+
+The dashboard opens automatically at **http://localhost:5173**
+
+---
+
+## API Keys
+
+Create a `backend/.env` file (copy from `.env.example`):
+
+```env
+GROQ_API_KEY=your_key        # https://console.groq.com — Free
+NEWSAPI_KEY=your_key         # https://newsapi.org/register — Free
+FINNHUB_KEY=your_key         # https://finnhub.io/register — Free
+REDDIT_CLIENT_ID=            # Optional — Reddit public API used as fallback
+REDDIT_CLIENT_SECRET=        # Optional
+```
+
+> The app runs with graceful fallbacks even if some keys are missing. Reddit uses the public JSON API by default (no key needed).
+
+---
+
+## Docker Deployment
+
+```bash
+# Copy and fill your env file first
+cp backend/.env.example backend/.env
+
 docker-compose up --build -d
 ```
-The application will be available at `http://localhost:5173`.
 
-## Configuration
-Add your API keys to `backend/.env`:
-- `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET`
-- `NEWSAPI_KEY`
-- `FINNHUB_KEY`
-- `GROQ_API_KEY` (Optional: for AI synthesis)
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:5173 |
+| Backend API | http://localhost:8001 |
+| API Docs | http://localhost:8001/docs |
 
-*(Note: The UI features graceful fallbacks and will run perfectly even if keys are missing).*
+---
+
+## Project Structure
+
+```
+Shylock/
+├── backend/
+│   ├── main.py              # FastAPI app + all endpoints
+│   ├── market/              # yfinance price data + screener
+│   ├── scrapers/            # Reddit, NewsAPI, Finnhub scrapers
+│   ├── sentiment/           # FinBERT inference pipeline
+│   ├── predictor/           # Direction signal computation
+│   ├── requirements.txt
+│   └── Dockerfile
+├── frontend/
+│   ├── src/
+│   │   ├── pages/           # Analysis, Watchlist, Screener, Compare, Journal
+│   │   ├── components/      # AuthModal, Chatbot, SearchHistory
+│   │   └── hooks/           # useAnalysis, useAuth, useSearchHistory
+│   └── Dockerfile
+├── .github/workflows/ci.yml
+├── docker-compose.yml
+├── Run_Project.bat
+├── INSTALL.bat
+└── UNINSTALL.bat
+```
+
+---
 
 ## License
-MIT License. See [LICENSE](LICENSE) for more information.
+
+MIT © 2026 Devansh Tyagi — see [LICENSE](LICENSE)

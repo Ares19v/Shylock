@@ -1,10 +1,44 @@
-# Shylock
+# ─── Python ──────────────────────────────────────────────────────────────────
 venv/
 __pycache__/
 *.pyc
-.env
-node_modules/
+*.pyo
+*.pyd
+*.egg-info/
 dist/
+build/
+.eggs/
+*.egg
+
+# ─── Environment / Secrets ───────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ─── Node / Frontend ─────────────────────────────────────────────────────────
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# ─── HuggingFace model cache (large, not needed in repo) ─────────────────────
+*.bin
+*.safetensors
+*.pt
+*.onnx
+backend/models/
+
+# ─── OS / Editor ─────────────────────────────────────────────────────────────
 .DS_Store
+Thumbs.db
 *.log
+.vscode/settings.json
+.idea/
+
+# ─── Docker ──────────────────────────────────────────────────────────────────
+*.env.docker
+
+# ─── Tooling ─────────────────────────────────────────────────────────────────
 .gemini/
+.pytest_cache/
+.coverage
+htmlcov/
