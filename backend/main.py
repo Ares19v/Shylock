@@ -4,11 +4,13 @@ import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
+from typing import List
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from groq import Groq
+from pydantic import BaseModel
 
 from scrapers.reddit_scraper import fetch_reddit_posts
 from scrapers.news_scraper import fetch_news_articles
@@ -16,6 +18,7 @@ from scrapers.stocktwits_scraper import fetch_stocktwits
 from sentiment.finbert import analyze_sentiment, compute_velocity
 from predictor.direction import compute_direction_signal
 from market.prices import get_price_history, get_technicals, get_company_info, get_sector_prices
+from market.screener import run_screener
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -200,6 +203,82 @@ async def websocket_synthesis(websocket: WebSocket, client_id: str):
         pass
     except Exception as e:
         await websocket.send_text(json.dumps({"type": "error", "message": str(e)}))
+
+
+# ─── Quick endpoint (price + technicals only, no scraping) ───────────────────
+@app.get("/quick/{ticker}")
+async def quick(ticker: str):
+    ticker = ticker.upper()
+    tech, company = await asyncio.gather(_run(get_technicals, ticker), _run(get_company_info, ticker))
+    return {"ticker": ticker, "company": company, "technicals": tech}
+
+
+# ─── Screener ─────────────────────────────────────────────────────────────────
+_screener_cache: dict = {}
+_screener_cache_ts: float = 0
+
+@app.get("/screener")
+async def screener(sector: str = None, signal: str = None):
+    import time
+    global _screener_cache, _screener_cache_ts
+    cache_key = f"{sector}:{signal}"
+    if _screener_cache.get(cache_key) and (time.time() - _screener_cache_ts) < 1800:
+        return _screener_cache[cache_key]
+    results = await _run(run_screener, sector, signal)
+    payload = {"results": results}
+    _screener_cache[cache_key] = payload
+    _screener_cache_ts = time.time()
+    return payload
+
+
+# ─── Compare ──────────────────────────────────────────────────────────────────
+@app.get("/compare/{t1}/{t2}")
+async def compare(t1: str, t2: str, timeframe: str = "1W"):
+    t1, t2 = t1.upper(), t2.upper()
+
+    async def _full(ticker):
+        reddit_fut  = _run(fetch_reddit_posts, ticker, timeframe)
+        news_fut    = _run(fetch_news_articles, ticker, "", timeframe)
+        st_fut      = _run(fetch_stocktwits, ticker)
+        price_fut   = _run(get_price_history, ticker, timeframe)
+        tech_fut    = _run(get_technicals, ticker)
+        info_fut    = _run(get_company_info, ticker)
+        reddit, news, stocktwits, price_data, technicals, company = await asyncio.gather(
+            reddit_fut, news_fut, st_fut, price_fut, tech_fut, info_fut
+        )
+        all_texts = [p["text"] for p in reddit.get("posts", [])] + [a["text"] for a in news.get("articles", [])]
+        overall_sentiment = analyze_sentiment(all_texts) if all_texts else {"bullish": 0.0, "bearish": 0.0, "neutral": 1.0, "label": "NEUTRAL", "text_count": 0}
+        direction = compute_direction_signal(overall_sentiment, technicals, timeframe)
+        return {"ticker": ticker, "company": company, "overall_sentiment": overall_sentiment,
+                "technicals": technicals, "direction": direction, "price": price_data, "timeframe": timeframe}
+
+    a, b = await asyncio.gather(_full(t1), _full(t2))
+    return {"a": a, "b": b}
+
+
+# ─── AI Chat ──────────────────────────────────────────────────────────────────
+class ChatMsg(BaseModel):
+    role: str
+    content: str
+
+class ChatReq(BaseModel):
+    messages: List[ChatMsg]
+
+SYSTEM_PROMPT = """You are SHYLOCK AI, the intelligent assistant for the Shylock Financial Intelligence platform.
+Help users understand: the platform features (Analysis, Watchlist, Screener, Compare, Journal), how sentiment analysis works, how to interpret RSI/MACD signals, and basic financial concepts.
+Be concise and professional. Keep responses under 150 words unless detail is needed.
+Do NOT give specific investment advice. Always note Shylock is for informational purposes only."""
+
+@app.post("/chat")
+async def chat(req: ChatReq):
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    messages += [{"role": m.role, "content": m.content} for m in req.messages]
+    response = groq_client.chat.completions.create(
+        messages=messages,
+        model="llama-3.3-70b-versatile",
+        max_tokens=300,
+    )
+    return {"reply": response.choices[0].message.content}
 
 
 if __name__ == "__main__":
