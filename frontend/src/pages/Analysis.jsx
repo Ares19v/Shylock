@@ -4,12 +4,13 @@ import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-export default function Analysis({ addToHistory, initialTicker = '', onTickerChange }) {
+export default function Analysis({ addToHistory, initialTicker = '', onTickerChange, user, history, clearHistory, onAuthClick }) {
   const { data, isLoading, error, analyze } = useAnalysis();
   const heatmap = useSectorHeatmap();
   const [tickerInput, setTickerInput] = useState(initialTicker);
   const [timeframe, setTimeframe] = useState('1W');
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [histOpen, setHistOpen] = useState(false);
   const reportRef = useRef(null);
 
   const handleSearch = (e, overrideTicker) => {
@@ -83,7 +84,8 @@ export default function Analysis({ addToHistory, initialTicker = '', onTickerCha
           </div>
           {isLoading && <span className="text-xs text-slate-500 animate-pulse">Analysing...</span>}
         </form>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3">
+          {/* Timeframe */}
           <div className="flex bg-surface-container-low p-1 rounded-DEFAULT border border-outline-variant">
             {['1D', '1W', '1M', '3M', '6M', '1Y'].map(tf => (
               <button key={tf} onClick={() => handleTimeframeChange(tf)}
@@ -92,10 +94,69 @@ export default function Analysis({ addToHistory, initialTicker = '', onTickerCha
               </button>
             ))}
           </div>
+
+          {/* Export PDF */}
           <button onClick={handleGeneratePDF} disabled={!data || pdfLoading}
-            className="bg-primary text-on-primary font-label-sm text-label-sm px-6 py-2 h-10 rounded-DEFAULT hover:bg-tertiary transition-colors flex items-center gap-2 disabled:opacity-40">
+            className="bg-primary text-on-primary font-label-sm text-label-sm px-4 py-2 h-10 rounded-DEFAULT hover:bg-tertiary transition-colors flex items-center gap-2 disabled:opacity-40">
             <span className="material-symbols-outlined text-sm">{pdfLoading ? 'hourglass_empty' : 'picture_as_pdf'}</span>
             {pdfLoading ? 'Generating...' : 'Export PDF'}
+          </button>
+
+          {/* Divider */}
+          <div className="h-6 w-px bg-outline-variant" />
+
+          {/* Search History */}
+          <div className="relative">
+            <button
+              id="history-btn"
+              onClick={() => setHistOpen(p => !p)}
+              className="text-slate-500 hover:text-slate-900 transition-colors relative p-1"
+            >
+              <span className="material-symbols-outlined">history</span>
+              {history && history.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-white text-[9px] flex items-center justify-center rounded-full">{history.length}</span>
+              )}
+            </button>
+            {histOpen && (
+              <div className="absolute right-0 top-11 w-72 bg-white border border-outline-variant rounded-lg shadow-xl z-[100]" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between px-4 py-3 border-b border-outline-variant">
+                  <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Search History</span>
+                  <button onClick={() => { clearHistory(); setHistOpen(false); }} className="font-caption text-caption text-error hover:underline">Clear</button>
+                </div>
+                {!history || history.length === 0 ? (
+                  <div className="p-4 text-center font-caption text-caption text-outline">No searches yet</div>
+                ) : (
+                  <ul>
+                    {history.map((h, i) => (
+                      <li key={i}>
+                        <button
+                          onClick={() => {
+                            setTickerInput(h.ticker);
+                            analyze(h.ticker, timeframe);
+                            addToHistory(h.ticker);
+                            setHistOpen(false);
+                          }}
+                          className="w-full flex items-center justify-between px-4 py-3 hover:bg-surface-container transition-colors text-left border-b border-surface-container last:border-0">
+                          <div className="flex items-center gap-3">
+                            <span className="material-symbols-outlined text-sm text-outline">trending_up</span>
+                            <span className="font-label-sm text-label-sm text-primary">{h.ticker}</span>
+                          </div>
+                          <span className="font-caption text-caption text-outline">
+                            {new Date(h.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Auth */}
+          <button onClick={onAuthClick} className="text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-1.5 p-1">
+            <span className="material-symbols-outlined">account_circle</span>
+            {user && <span className="font-caption text-caption text-slate-700 hidden lg:inline max-w-[80px] truncate">{user.username}</span>}
           </button>
         </div>
       </header>
@@ -130,20 +191,37 @@ export default function Analysis({ addToHistory, initialTicker = '', onTickerCha
 
             <div className="grid grid-cols-12 gap-6">
               {/* Sentiment Gauge */}
-              <div className="col-span-12 lg:col-span-4 bg-surface-container-lowest border border-outline-variant rounded-lg p-6 flex flex-col items-center justify-center min-h-[300px]">
-                <h3 className="font-label-sm text-label-sm text-on-surface-variant w-full text-left uppercase tracking-widest mb-8">Aggregate Sentiment</h3>
-                <div className="relative w-48 h-24 mb-4">
-                  <svg className="w-full h-full overflow-visible" viewBox="0 0 100 50">
-                    <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#f3f4f6" strokeLinecap="round" strokeWidth="8"></path>
-                    <path d={`M 10 50 A 40 40 0 0 1 ${50 - 40 * Math.cos(needleAngle * Math.PI / 180)} ${50 - 40 * Math.sin(needleAngle * Math.PI / 180)}`} fill="none" stroke="#1a222e" strokeLinecap="round" strokeWidth="8"></path>
-                    <g transform={`translate(50, 50) rotate(${needleAngle})`}>
-                      <polygon fill="#040b16" points="-2,-35 2,-35 0,5"></polygon>
-                      <circle cx="0" cy="0" fill="#040b16" r="4"></circle>
-                    </g>
-                  </svg>
-                  <div className="absolute bottom-0 left-0 w-full text-center translate-y-full pt-4">
-                    <span className="font-h1 text-h1 text-primary block">{(overall_sentiment.bullish * 100).toFixed(0)}</span>
-                    <span className="font-label-sm text-label-sm text-primary block mt-1">{overall_sentiment.label} Bias</span>
+              <div className="col-span-12 lg:col-span-4 bg-surface-container-lowest border border-outline-variant rounded-lg p-6 flex flex-col min-h-[300px]">
+                <h3 className="font-label-sm text-label-sm text-on-surface-variant w-full text-left uppercase tracking-widest mb-4">Aggregate Sentiment</h3>
+                <div className="flex-1 flex flex-col items-center justify-center gap-4">
+                  {/* Gauge arc */}
+                  <div className="w-44 h-24">
+                    <svg className="w-full h-full overflow-visible" viewBox="0 0 100 52">
+                      <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#e2e8f0" strokeLinecap="round" strokeWidth="8"></path>
+                      <path
+                        d={`M 10 50 A 40 40 0 0 1 ${50 - 40 * Math.cos(needleAngle * Math.PI / 180)} ${50 - 40 * Math.sin(needleAngle * Math.PI / 180)}`}
+                        fill="none" stroke="#1a222e" strokeLinecap="round" strokeWidth="8"
+                      ></path>
+                      <g transform={`translate(50, 50) rotate(${needleAngle})`}>
+                        <polygon fill="#040b16" points="-2,-34 2,-34 0,4"></polygon>
+                        <circle cx="0" cy="0" fill="#040b16" r="4"></circle>
+                      </g>
+                    </svg>
+                  </div>
+                  {/* Score + label below gauge */}
+                  <div className="text-center">
+                    <span className="font-h1 text-h1 text-primary block leading-none">{(overall_sentiment.bullish * 100).toFixed(0)}</span>
+                    <span className="font-label-sm text-label-sm text-on-surface-variant block mt-2 uppercase tracking-widest">{overall_sentiment.label} Bias</span>
+                  </div>
+                  {/* Mini bull/bear bar */}
+                  <div className="w-full max-w-[140px]">
+                    <div className="flex justify-between font-caption text-[10px] text-outline mb-1">
+                      <span>Bear {(overall_sentiment.bearish * 100).toFixed(0)}%</span>
+                      <span>Bull {(overall_sentiment.bullish * 100).toFixed(0)}%</span>
+                    </div>
+                    <div className="h-1 w-full bg-red-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full transition-all duration-1000" style={{ width: `${overall_sentiment.bullish * 100}%` }}></div>
+                    </div>
                   </div>
                 </div>
               </div>
