@@ -220,7 +220,7 @@ _screener_cache_ts: float = 0
 @app.get("/screener")
 async def screener(sector: str = None, signal: str = None):
     import time
-    global _screener_cache, _screener_cache_ts
+    global _screener_cache_ts
     cache_key = f"{sector}:{signal}"
     if _screener_cache.get(cache_key) and (time.time() - _screener_cache_ts) < 1800:
         return _screener_cache[cache_key]
