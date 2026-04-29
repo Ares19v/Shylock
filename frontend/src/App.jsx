@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { useAnalysis, useSectorHeatmap } from './hooks/useAnalysis';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 
-const sessionId = Math.random().toString(36).substring(7).toUpperCase();
-
 export default function App() {
   const { data, isLoading, error, analyze } = useAnalysis();
   const heatmap = useSectorHeatmap();
