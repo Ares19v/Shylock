@@ -40,7 +40,7 @@ export default function Watchlist({ onNavigateAnalysis }) {
       try {
         const res = await fetch(`${API}/quick/${t}`);
         if (res.ok) results[t] = await res.json();
-      } catch (_e) { /* network error — skip ticker */ }
+      } catch { /* network error — skip ticker */ }
     }));
     setData(results);
     setLoading(false);
