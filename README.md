@@ -14,7 +14,7 @@
 **Real-time financial sentiment intelligence powered by FinBERT + Groq**
 
 [![CI](https://img.shields.io/github/actions/workflow/status/Ares19v/Shylock/ci.yml?branch=main&label=CI&logo=github)](https://github.com/Ares19v/Shylock/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://python.org)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](https://react.dev)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
@@ -148,6 +148,7 @@ Shylock/
 
 ---
 
-## License
-
-MIT © 2026 Devansh Tyagi — see [LICENSE](LICENSE)
+---
+<p align="center">
+  Made by Devansh Tyagi @ 2026
+</p>
