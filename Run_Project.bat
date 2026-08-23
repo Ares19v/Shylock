@@ -46,10 +46,10 @@ if not exist "backend\.env" (
 )
 
 echo  [1/2] Launching Backend  ^(FastAPI — Port 8001^)...
-start cmd /k "title Shylock ^| Backend & color 0A & cd backend & call venv\Scripts\activate.bat & python -m uvicorn main:app --reload --port 8001"
+start "Shylock | Backend" cmd /k "color 0A & cd backend & call venv\Scripts\activate.bat & python -m uvicorn main:app --reload --port 8001"
 
 echo  [2/2] Launching Frontend ^(React   — Port 5173^)...
-start cmd /k "title Shylock ^| Frontend & color 0B & cd frontend & npm run dev"
+start "Shylock | Frontend" cmd /k "color 0B & cd frontend & npm run dev"
 
 echo.
 echo  Waiting for servers to initialize...
