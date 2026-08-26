@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-const STORAGE_KEY = 'shylock_users';
-const SESSION_KEY = 'shylock_session';
+const STORAGE_KEY = 'delphi_users';
+const SESSION_KEY = 'delphi_session';
 
 function hashPassword(password) {
   // Simple deterministic hash for demo auth — NOT for production

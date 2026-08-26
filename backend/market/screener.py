@@ -1,4 +1,4 @@
-"""Curated ticker universe and screening logic for Shylock."""
+"""Curated ticker universe and screening logic for Delphi."""
 import pandas as pd
 import yfinance as yf
 

@@ -1,22 +1,24 @@
-# SHYLOCK — Market Sentiment Intelligence
+# DELPHI — Market Sentiment Intelligence
 
 <div align="center">
 
 ```
-███████╗██╗  ██╗██╗   ██╗██╗      ██████╗  ██████╗██╗  ██╗
-██╔════╝██║  ██║╚██╗ ██╔╝██║     ██╔═══██╗██╔════╝██║ ██╔╝
-███████╗███████║ ╚████╔╝ ██║     ██║   ██║██║     █████╔╝
-╚════██║██╔══██║  ╚██╔╝  ██║     ██║   ██║██║     ██╔═██╗
-███████║██║  ██║   ██║   ███████╗╚██████╔╝╚██████╗██║  ██╗
-╚══════╝╚═╝  ╚═╝   ╚═╝   ╚══════╝ ╚═════╝  ╚═════╝╚═╝  ╚═╝
+██████╗ ███████╗██╗     ██████╗ ██╗  ██╗██╗
+██╔══██╗██╔════╝██║     ██╔══██╗██║  ██║██║
+██║  ██║█████╗  ██║     ██████╔╝███████║██║
+██║  ██║██╔══╝  ██║     ██╔═══╝ ██╔══██║██║
+██████╔╝███████╗███████╗██║     ██║  ██║██║
+╚═════╝ ╚══════╝╚══════╝╚═╝     ╚═╝  ╚═╝╚═╝
 ```
 
 **Real-time financial sentiment intelligence powered by FinBERT + Groq**
 
-[![CI](https://img.shields.io/github/actions/workflow/status/Ares19v/Shylock/ci.yml?branch=main&label=CI&logo=github)](https://github.com/Ares19v/Shylock/actions)
+*Consult many sources. Receive one signal.*
+
+[![CI](https://img.shields.io/github/actions/workflow/status/Ares19v/Delphi/ci.yml?branch=main&label=CI&logo=github)](https://github.com/Ares19v/Delphi/actions)
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://python.org)
-[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](https://react.dev)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 
 </div>
@@ -25,7 +27,7 @@
 
 ## What It Does
 
-Shylock ingests live data from **Reddit**, **NewsAPI**, and **Finnhub**, runs every article and post through **ProsusAI/FinBERT** (a transformer model pre-trained on financial text), and surfaces the aggregated market sentiment as actionable directional signals — all within seconds of hitting "Generate Report".
+Like the Oracle at Delphi — which synthesized cryptic signals from many hidden sources into a single authoritative prophecy — **Delphi** ingests live data from **Reddit**, **NewsAPI**, and **Finnhub**, runs every article and post through **ProsusAI/FinBERT** (a transformer model pre-trained on financial text), and surfaces the aggregated market sentiment as actionable directional signals — all within seconds of hitting "Generate Report".
 
 ---
 
@@ -34,6 +36,7 @@ Shylock ingests live data from **Reddit**, **NewsAPI**, and **Finnhub**, runs ev
 | Feature | Description |
 |---|---|
 | **Sentiment Analysis** | FinBERT scores every Reddit post and news article as Bullish / Bearish / Neutral |
+| **Sentiment Velocity** | Detects sudden accelerations in crowd momentum before price reacts |
 | **Price Momentum** | Live price charts via `yfinance` — no API key required |
 | **Directional Signal** | Rule-based weighted score combining sentiment (60%) + RSI (25%) + MACD (15%) |
 | **Stock Screener** | Filter 50+ tickers across 7 sectors by signal type and momentum |
@@ -56,8 +59,8 @@ Shylock ingests live data from **Reddit**, **NewsAPI**, and **Finnhub**, runs ev
 - `httpx` · `finnhub-python` · `python-dotenv`
 
 **Frontend**
-- React 18 · Vite 8 · Tailwind CSS 3
-- Recharts · jsPDF · html2canvas · react-markdown
+- React 19 · Vite 8 · Tailwind CSS 3
+- Recharts · jsPDF · html2canvas · react-markdown · Lucide React
 
 **Infrastructure**
 - Docker + Docker Compose
@@ -70,8 +73,8 @@ Shylock ingests live data from **Reddit**, **NewsAPI**, and **Finnhub**, runs ev
 
 ```bash
 # 1. Clone
-git clone https://github.com/Ares19v/Shylock.git
-cd Shylock
+git clone https://github.com/Ares19v/Delphi.git
+cd Delphi
 
 # 2. Add your API keys
 copy backend\.env.example backend\.env
@@ -124,7 +127,7 @@ docker-compose up --build -d
 ## Project Structure
 
 ```
-Shylock/
+Delphi/
 ├── backend/
 │   ├── main.py              # FastAPI app + all endpoints
 │   ├── market/              # yfinance price data + screener
@@ -148,7 +151,6 @@ Shylock/
 
 ---
 
----
 <p align="center">
   Made by Devansh Tyagi @ 2026
 </p>

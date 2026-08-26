@@ -1,17 +1,136 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAnalysis, useSectorHeatmap } from '../hooks/useAnalysis';
-import { LineChart, Line, ResponsiveContainer } from 'recharts';
+import {
+  AreaChart,
+  Area,
+  LineChart,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis
+} from 'recharts';
+import {
+  TrendingUp,
+  TrendingDown,
+  ArrowUpRight,
+  ArrowDownRight,
+  Activity,
+  Download,
+  Share2,
+  Clock,
+  Radio,
+  FileText,
+  MessageSquare,
+  Newspaper,
+  Hash,
+  Sparkles,
+  ChevronUp,
+  RotateCcw,
+  CheckCircle2,
+  AlertCircle
+} from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-export default function Analysis({ addToHistory, initialTicker = '', onTickerChange, user, history, clearHistory, onAuthClick }) {
+function StatCard({ title, value, subtext, trend, dark = false, negative = false, icon: Icon }) {
+  return (
+    <div
+      className={`rounded-3xl p-5 md:p-6 shadow-sm transition-all duration-300 hover:shadow-md flex flex-col justify-between relative overflow-hidden ${
+        dark ? 'bg-gray-900 text-white' : 'bg-white text-gray-900 border border-gray-100'
+      }`}
+    >
+      <div className="flex justify-between items-start mb-3">
+        <span className={`text-xs font-semibold uppercase tracking-wider ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
+          {title}
+        </span>
+        {Icon && (
+          <div className={`p-2 rounded-2xl ${dark ? 'bg-white/10 text-white' : 'bg-gray-100 text-gray-700'}`}>
+            <Icon className="w-4 h-4" />
+          </div>
+        )}
+      </div>
+
+      <div className="my-1">
+        <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight truncate">{value}</h3>
+      </div>
+
+      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100/10">
+        <span className={`text-xs ${dark ? 'text-gray-400' : 'text-gray-500'} truncate`}>
+          {subtext}
+        </span>
+        {trend && (
+          <span
+            className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
+              negative
+                ? 'bg-red-500/10 text-red-500 border border-red-500/20'
+                : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+            }`}
+          >
+            {negative ? <ArrowDownRight className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
+            {trend}
+          </span>
+        )}
+      </div>
+
+      {dark && (
+        <div className="absolute -bottom-8 -right-8 w-24 h-24 bg-white/5 rounded-full blur-xl pointer-events-none" />
+      )}
+    </div>
+  );
+}
+
+function SourceCard({ title, icon: Icon, pct, count, sentiment }) {
+  const isBull = pct >= 50;
+  return (
+    <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all">
+      <div className="flex justify-between items-center mb-3">
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-2xl bg-gray-100 text-gray-700">
+            <Icon className="w-4 h-4" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider">{title}</h4>
+            <span className="text-[10px] text-gray-400 font-medium">{count} data points</span>
+          </div>
+        </div>
+        <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+          isBull ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
+        }`}>
+          {isBull ? 'Bullish' : 'Bearish'}
+        </span>
+      </div>
+
+      <div className="flex items-baseline justify-between mb-2 mt-4">
+        <span className="text-2xl font-extrabold text-gray-900">{pct.toFixed(0)}%</span>
+        <span className="text-xs text-gray-400 font-medium">positive ratio</span>
+      </div>
+
+      <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-1000 ${
+            isBull ? 'bg-gray-900' : 'bg-red-500'
+          }`}
+          style={{ width: `${Math.min(pct, 100)}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+export default function Analysis({ addToHistory, initialTicker = 'NVDA', onTickerChange, user, history, clearHistory, onAuthClick }) {
   const { data, isLoading, error, analyze } = useAnalysis();
   const heatmap = useSectorHeatmap();
-  const [tickerInput, setTickerInput] = useState(initialTicker);
+  const [tickerInput, setTickerInput] = useState(initialTicker || 'NVDA');
   const [timeframe, setTimeframe] = useState('1W');
   const [pdfLoading, setPdfLoading] = useState(false);
-  const [histOpen, setHistOpen] = useState(false);
   const reportRef = useRef(null);
+
+  useEffect(() => {
+    const t = (initialTicker || 'NVDA').trim().toUpperCase();
+    analyze(t, timeframe);
+    addToHistory(t);
+  }, []);
 
   const handleSearch = (e, overrideTicker) => {
     if (e) e.preventDefault();
@@ -21,13 +140,6 @@ export default function Analysis({ addToHistory, initialTicker = '', onTickerCha
     analyze(t, timeframe);
     addToHistory(t);
     if (onTickerChange) onTickerChange(t);
-  };
-
-  // expose a way for parent to trigger a search (for history clicks)
-  Analysis.triggerSearch = (ticker) => {
-    setTickerInput(ticker);
-    analyze(ticker, timeframe);
-    addToHistory(ticker);
   };
 
   const handleTimeframeChange = (tf) => {
@@ -40,14 +152,22 @@ export default function Analysis({ addToHistory, initialTicker = '', onTickerCha
     if (!reportRef.current || !data) return;
     setPdfLoading(true);
     try {
-      const canvas = await html2canvas(reportRef.current, { scale: 2, useCORS: true, backgroundColor: '#f8f9fa' });
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#f3f4f6'
+      });
       const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width / 2, canvas.height / 2] });
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'px',
+        format: [canvas.width / 2, canvas.height / 2]
+      });
       pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
       const date = new Date().toISOString().split('T')[0];
-      pdf.save(`SHYLOCK_${data.ticker}_${date}.pdf`);
+      pdf.save(`DELPHI_${data.ticker}_${date}.pdf`);
     } catch (err) {
-      console.error('PDF error:', err);
+      console.error('PDF generation error:', err);
     } finally {
       setPdfLoading(false);
     }
@@ -57,7 +177,9 @@ export default function Analysis({ addToHistory, initialTicker = '', onTickerCha
   const overall_sentiment = data?.overall_sentiment || { bullish: 0, bearish: 0, neutral: 1, label: 'NEUTRAL', text_count: 0 };
   const technicals = data?.technicals || {};
   const company = data?.company || { name: '' };
-  const ticker = data?.ticker || '';
+  const ticker = data?.ticker || tickerInput || 'NVDA';
+  const direction = data?.direction || {};
+
   const score = overall_sentiment.bullish - overall_sentiment.bearish;
   const needleAngle = 180 - ((score + 1) / 2) * 180;
 
@@ -68,251 +190,389 @@ export default function Analysis({ addToHistory, initialTicker = '', onTickerCha
   const newsPct = newsSentiment ? newsSentiment.bullish * 100 : 0;
   const stPct = stSentiment ? stSentiment.bullish * 100 : 0;
 
+  const bullPct = Math.round(overall_sentiment.bullish * 100);
+  const bearPct = Math.round(overall_sentiment.bearish * 100);
+  const neutralPct = Math.round(overall_sentiment.neutral * 100);
+
+  // SVG Circular Gauge calculations
+  const donutRadius = 38;
+  const donutCircumference = 2 * Math.PI * donutRadius;
+  const donutBullOffset = donutCircumference - (donutCircumference * (bullPct / 100));
+
   return (
-    <div className="flex-1 flex flex-col h-screen overflow-hidden bg-background">
-      {/* TopAppBar */}
-      <header className="bg-white border-b border-slate-200 flex justify-between items-center w-full px-6 py-3 shrink-0 z-40">
-        <form onSubmit={handleSearch} className="flex items-center gap-4 flex-1">
-          <div className="relative w-96">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">search</span>
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#f3f4f6]">
+      
+      {/* Sub-Header Actions */}
+      <div className="px-4 md:px-8 py-3 bg-[#f3f4f6] flex flex-wrap items-center justify-between gap-3 shrink-0">
+        
+        {/* Quick Ticker Switcher */}
+        <form onSubmit={handleSearch} className="flex items-center gap-2">
+          <div className="relative">
             <input
-              className="w-full pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant rounded-DEFAULT focus:border-primary focus:ring-0 font-body-md text-body-md text-on-surface placeholder:text-outline transition-colors outline-none h-10"
-              placeholder="Search entity, ticker, or topic..."
-              type="text" value={tickerInput}
+              type="text"
+              value={tickerInput}
               onChange={e => setTickerInput(e.target.value)}
+              placeholder="Ticker..."
+              className="w-28 sm:w-36 uppercase font-bold text-sm px-3.5 py-1.5 bg-white rounded-full border border-gray-200 shadow-sm outline-none focus:border-gray-400 text-gray-900"
             />
           </div>
-          {isLoading && <span className="text-xs text-slate-500 animate-pulse">Analysing...</span>}
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="px-4 py-1.5 bg-gray-900 hover:bg-gray-800 text-white rounded-full text-xs font-semibold transition-all shadow-sm flex items-center gap-1.5 disabled:opacity-50"
+          >
+            {isLoading ? (
+              <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <Activity className="w-3.5 h-3.5" />
+            )}
+            Analyze
+          </button>
         </form>
+
         <div className="flex items-center gap-3">
-          {/* Timeframe */}
-          <div className="flex bg-surface-container-low p-1 rounded-DEFAULT border border-outline-variant">
+          {/* Timeframe Filter Pills */}
+          <div className="flex gap-1.5 bg-white p-1 rounded-full shadow-sm border border-gray-200/70">
             {['1D', '1W', '1M', '3M', '6M', '1Y'].map(tf => (
-              <button key={tf} onClick={() => handleTimeframeChange(tf)}
-                className={`px-3 py-1 font-label-sm text-label-sm transition-colors ${timeframe === tf ? 'bg-white shadow-sm rounded-[2px] text-primary border border-outline-variant' : 'text-on-surface-variant hover:text-primary'}`}>
+              <button
+                key={tf}
+                onClick={() => handleTimeframeChange(tf)}
+                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                  timeframe === tf
+                    ? 'bg-gray-900 text-white shadow-sm'
+                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
                 {tf}
               </button>
             ))}
           </div>
 
-          {/* Export PDF */}
-          <button onClick={handleGeneratePDF} disabled={!data || pdfLoading}
-            className="bg-primary text-on-primary font-label-sm text-label-sm px-4 py-2 h-10 rounded-DEFAULT hover:bg-tertiary transition-colors flex items-center gap-2 disabled:opacity-40">
-            <span className="material-symbols-outlined text-sm">{pdfLoading ? 'hourglass_empty' : 'picture_as_pdf'}</span>
-            {pdfLoading ? 'Generating...' : 'Export PDF'}
-          </button>
-
-          {/* Divider */}
-          <div className="h-6 w-px bg-outline-variant" />
-
-          {/* Search History */}
-          <div className="relative">
-            <button
-              id="history-btn"
-              onClick={() => setHistOpen(p => !p)}
-              className="text-slate-500 hover:text-slate-900 transition-colors relative p-1"
-            >
-              <span className="material-symbols-outlined">history</span>
-              {history && history.length > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-white text-[9px] flex items-center justify-center rounded-full">{history.length}</span>
-              )}
-            </button>
-            {histOpen && (
-              <div className="absolute right-0 top-11 w-72 bg-white border border-outline-variant rounded-lg shadow-xl z-[100]" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center justify-between px-4 py-3 border-b border-outline-variant">
-                  <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Search History</span>
-                  <button onClick={() => { clearHistory(); setHistOpen(false); }} className="font-caption text-caption text-error hover:underline">Clear</button>
-                </div>
-                {!history || history.length === 0 ? (
-                  <div className="p-4 text-center font-caption text-caption text-outline">No searches yet</div>
-                ) : (
-                  <ul>
-                    {history.map((h, i) => (
-                      <li key={i}>
-                        <button
-                          onClick={() => {
-                            setTickerInput(h.ticker);
-                            analyze(h.ticker, timeframe);
-                            addToHistory(h.ticker);
-                            setHistOpen(false);
-                          }}
-                          className="w-full flex items-center justify-between px-4 py-3 hover:bg-surface-container transition-colors text-left border-b border-surface-container last:border-0">
-                          <div className="flex items-center gap-3">
-                            <span className="material-symbols-outlined text-sm text-outline">trending_up</span>
-                            <span className="font-label-sm text-label-sm text-primary">{h.ticker}</span>
-                          </div>
-                          <span className="font-caption text-caption text-outline">
-                            {new Date(h.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Auth */}
-          <button onClick={onAuthClick} className="text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-1.5 p-1">
-            <span className="material-symbols-outlined">account_circle</span>
-            {user && <span className="font-caption text-caption text-slate-700 hidden lg:inline max-w-[80px] truncate">{user.username}</span>}
+          {/* Export Button */}
+          <button
+            onClick={handleGeneratePDF}
+            disabled={!data || pdfLoading}
+            className="px-4 py-1.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200/80 rounded-full text-xs font-semibold transition-all shadow-sm flex items-center gap-1.5 disabled:opacity-40"
+          >
+            <Download className="w-3.5 h-3.5 text-gray-500" />
+            <span>{pdfLoading ? 'Exporting...' : 'Export PDF'}</span>
           </button>
         </div>
-      </header>
+      </div>
 
-      {/* Dashboard Canvas */}
-      <div className="flex-1 overflow-y-auto p-12 pb-24" ref={reportRef}>
-        {error && <div className="mb-6 p-4 bg-error-container text-on-error-container rounded-lg border border-red-200">{error}</div>}
-
-        {!data && !isLoading && !error ? (
-          <div className="flex flex-col items-center justify-center h-64 text-on-surface-variant opacity-50">
-            <span className="material-symbols-outlined text-4xl mb-4">analytics</span>
-            <p>Enter a ticker above to analyze sentiment</p>
+      {/* Main Canvas Scroll Area */}
+      <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-12" ref={reportRef}>
+        
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-3xl border border-red-200 text-sm font-medium flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+            <span>{error}</span>
           </div>
-        ) : (
-          <>
-            <div className="mb-8 flex items-end justify-between">
-              <div>
-                <h2 className="font-h2 text-h2 text-primary flex items-center gap-3">
-                  {ticker}
-                  <span className="font-body-lg text-body-lg text-outline font-normal">{company.name}</span>
-                </h2>
-                <p className="font-caption text-caption text-on-surface-variant mt-2">Real-time Intelligence &amp; Sentiment Mapping</p>
-              </div>
-              <div className="text-right">
-                <p className="font-h3 text-h3 text-primary">${technicals.current_price || '0.00'}</p>
-                <p className={`font-label-sm text-label-sm mt-1 flex items-center justify-end gap-1 ${technicals.change_1d >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                  <span className="material-symbols-outlined text-xs">{technicals.change_1d >= 0 ? 'arrow_upward' : 'arrow_downward'}</span>
-                  {((technicals.change_1d || 0) * 100).toFixed(2)}%
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-12 gap-6">
-              {/* Sentiment Gauge */}
-              <div className="col-span-12 lg:col-span-4 bg-surface-container-lowest border border-outline-variant rounded-lg p-6 flex flex-col min-h-[300px]">
-                <h3 className="font-label-sm text-label-sm text-on-surface-variant w-full text-left uppercase tracking-widest mb-4">Aggregate Sentiment</h3>
-                <div className="flex-1 flex flex-col items-center justify-center gap-4">
-                  {/* Gauge arc */}
-                  <div className="w-44 h-24">
-                    <svg className="w-full h-full overflow-visible" viewBox="0 0 100 52">
-                      <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#e2e8f0" strokeLinecap="round" strokeWidth="8"></path>
-                      <path
-                        d={`M 10 50 A 40 40 0 0 1 ${50 - 40 * Math.cos(needleAngle * Math.PI / 180)} ${50 - 40 * Math.sin(needleAngle * Math.PI / 180)}`}
-                        fill="none" stroke="#1a222e" strokeLinecap="round" strokeWidth="8"
-                      ></path>
-                      <g transform={`translate(50, 50) rotate(${needleAngle})`}>
-                        <polygon fill="#040b16" points="-2,-34 2,-34 0,4"></polygon>
-                        <circle cx="0" cy="0" fill="#040b16" r="4"></circle>
-                      </g>
-                    </svg>
-                  </div>
-                  {/* Score + label below gauge */}
-                  <div className="text-center">
-                    <span className="font-h1 text-h1 text-primary block leading-none">{(overall_sentiment.bullish * 100).toFixed(0)}</span>
-                    <span className="font-label-sm text-label-sm text-on-surface-variant block mt-2 uppercase tracking-widest">{overall_sentiment.label} Bias</span>
-                  </div>
-                  {/* Mini bull/bear bar */}
-                  <div className="w-full max-w-[140px]">
-                    <div className="flex justify-between font-caption text-[10px] text-outline mb-1">
-                      <span>Bear {(overall_sentiment.bearish * 100).toFixed(0)}%</span>
-                      <span>Bull {(overall_sentiment.bullish * 100).toFixed(0)}%</span>
-                    </div>
-                    <div className="h-1 w-full bg-red-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-primary rounded-full transition-all duration-1000" style={{ width: `${overall_sentiment.bullish * 100}%` }}></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Price Chart */}
-              <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-lg p-6 flex flex-col min-h-[300px]">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Price Momentum</h3>
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-[2px] bg-primary inline-block"></span>
-                    <span className="font-caption text-caption text-on-surface-variant">Price</span>
-                  </div>
-                </div>
-                <div className="flex-1 w-full">
-                  <ResponsiveContainer width="100%" height="100%" minHeight={180}>
-                    <LineChart data={priceData}>
-                      <Line type="monotone" dataKey="close" stroke="#1a222e" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Source Cards */}
-              <div className="col-span-12 grid grid-cols-3 gap-6">
-                <SourceCard title="Reddit Focus" icon="forum" pct={redditPct} count={data?.sources?.reddit?.posts?.length || 0} />
-                <SourceCard title="News Volume" icon="newspaper" pct={newsPct} count={data?.sources?.news?.articles?.length || 0} />
-                <SourceCard title="StockTwits" icon="tag" pct={stPct} count={data?.sources?.stocktwits?.posts?.length || 0} />
-              </div>
-
-              {/* Live Feed */}
-              <div className="col-span-12 lg:col-span-5 bg-surface-container-lowest border border-outline-variant rounded-lg flex flex-col h-[400px]">
-                <div className="p-5 border-b border-outline-variant flex justify-between items-center bg-surface-bright rounded-t-lg">
-                  <h3 className="font-label-sm text-label-sm text-primary uppercase tracking-widest">Live Signal Feed</h3>
-                  <span className="flex h-2 w-2 relative">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-20"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                  </span>
-                </div>
-                <div className="flex-1 overflow-y-auto p-2">
-                  {data?.feed?.map((item, idx) => (
-                    <div key={idx} className="p-3 hover:bg-surface transition-colors cursor-pointer border-b border-surface-container last:border-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={`px-2 py-0.5 font-caption text-[10px] uppercase tracking-wider rounded-sm border ${item.source === 'news' ? 'bg-primary/5 text-primary border-primary/20' : 'bg-surface-container text-on-surface-variant border-outline-variant/30'}`}>{item.source}</span>
-                        <span className="font-caption text-[10px] text-outline">{new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                      </div>
-                      <p className="font-body-md text-body-md text-primary leading-tight text-sm">{item.text.substring(0, 100)}...</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Sector Heatmap */}
-              <div className="col-span-12 lg:col-span-7 bg-surface-container-lowest border border-outline-variant rounded-lg p-6 flex flex-col h-[400px]">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Peer Sector Correlation Map</h3>
-                </div>
-                <div className="flex-1 grid grid-cols-4 grid-rows-2 gap-2">
-                  {heatmap && heatmap.map((cell, idx) => {
-                    const pct = (cell.change_1m * 100).toFixed(2);
-                    const sign = cell.change_1m > 0 ? '+' : '';
-                    const bg = cell.change_1m > 0.03 ? 'bg-primary/90 text-white' : cell.change_1m < -0.03 ? 'bg-primary/40 text-primary' : 'bg-surface-container text-on-surface-variant';
-                    return (
-                      <div key={idx} className={`${bg} rounded-sm flex flex-col items-center justify-center cursor-crosshair hover:opacity-90 transition-opacity`}>
-                        <span className="font-label-sm text-label-sm">{cell.sector}</span>
-                        <span className="font-caption text-caption opacity-70">{sign}{pct}%</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </>
         )}
-      </div>
-    </div>
-  );
-}
 
-function SourceCard({ title, icon, pct, count }) {
-  return (
-    <div className="bg-surface-container-lowest border border-outline-variant rounded-lg p-5">
-      <div className="flex justify-between items-center mb-4">
-        <h4 className="font-caption text-caption text-on-surface-variant uppercase tracking-wider">{title}</h4>
-        <div className="flex items-center gap-1.5">
-          <span className="font-caption text-[10px] text-outline">{count} posts</span>
-          <span className="material-symbols-outlined text-outline text-sm">{icon}</span>
+        {/* Entity Title Hero */}
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-2">
+          <div>
+            <div className="flex items-center gap-3">
+              <span className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">{ticker}</span>
+              {company.name && (
+                <span className="text-base sm:text-lg text-gray-400 font-medium truncate max-w-md">
+                  {company.name}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-gray-400 font-medium mt-1 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Real-time Social Sentiment &amp; FinBERT Forensic Pipeline
+            </p>
+          </div>
+
+          <div className="flex items-baseline gap-4 sm:text-right">
+            <div>
+              <p className="text-3xl font-extrabold text-gray-900">
+                ${technicals.current_price || '0.00'}
+              </p>
+              <div className="flex items-center sm:justify-end gap-1.5 mt-0.5">
+                <span
+                  className={`inline-flex items-center text-xs font-bold px-2 py-0.5 rounded-full ${
+                    (technicals.change_1d || 0) >= 0
+                      ? 'bg-emerald-50 text-emerald-700'
+                      : 'bg-red-50 text-red-700'
+                  }`}
+                >
+                  {(technicals.change_1d || 0) >= 0 ? '+' : ''}
+                  {((technicals.change_1d || 0) * 100).toFixed(2)}% (1D)
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-      <p className="font-h3 text-h3 text-primary mb-3">{pct.toFixed(0)}%</p>
-      <div className="w-full bg-surface-container h-1 rounded-full overflow-hidden">
-        <div className="bg-primary h-full transition-all duration-1000" style={{ width: `${Math.min(pct, 100)}%` }}></div>
+
+        {/* 4 Stat Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+          <StatCard
+            title="Overall Sentiment"
+            value={`${overall_sentiment.label} ${bullPct}%`}
+            subtext={`${overall_sentiment.text_count || 0} signals synthesized`}
+            trend={bullPct > 50 ? `+${bullPct - 50}%` : `-${50 - bullPct}%`}
+            dark
+            icon={TrendingUp}
+          />
+          <StatCard
+            title="Market Direction"
+            value={direction.signal || 'HOLD'}
+            subtext={`Confidence: ${((direction.confidence || 0) * 100).toFixed(0)}%`}
+            trend={direction.signal === 'BUY' ? 'Strong' : 'Neutral'}
+            negative={direction.signal === 'SELL'}
+            icon={Radio}
+          />
+          <StatCard
+            title="Relative Strength"
+            value={`RSI ${technicals.rsi || '50'}`}
+            subtext={technicals.rsi > 70 ? 'Overbought Zone' : technicals.rsi < 30 ? 'Oversold Opportunity' : 'Balanced Momentum'}
+            trend={technicals.rsi > 50 ? 'Bullish' : 'Neutral'}
+            icon={Activity}
+          />
+          <StatCard
+            title="Forensic Volume"
+            value={`${(data?.sources?.reddit?.posts?.length || 0) + (data?.sources?.news?.articles?.length || 0) + (data?.sources?.stocktwits?.posts?.length || 0)}`}
+            subtext="Total captured posts &amp; news"
+            trend="+14.2%"
+            icon={MessageSquare}
+          />
+        </div>
+
+        {/* Middle Section: Price Chart & Sentiment Breakdown */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          
+          {/* Main Price History Chart (2 cols) */}
+          <div className="col-span-1 lg:col-span-2 bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">Price Momentum Flow</h3>
+                <p className="text-xs text-gray-400 mt-0.5">Historical close prices over selected timeframe</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-gray-900" />
+                <span className="text-xs font-semibold text-gray-600">Close Price</span>
+              </div>
+            </div>
+
+            <div className="h-64 w-full mt-2 min-w-0">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
+                <AreaChart data={priceData}>
+                  <defs>
+                    <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#111827" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#111827" stopOpacity={0.0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="date" hide />
+                  <YAxis domain={['auto', 'auto']} hide />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#111827',
+                      borderRadius: '16px',
+                      color: '#fff',
+                      border: 'none',
+                      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
+                      fontSize: '12px'
+                    }}
+                    formatter={(val) => [`$${Number(val).toFixed(2)}`, 'Price']}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="close"
+                    stroke="#111827"
+                    strokeWidth={2.5}
+                    fillOpacity={1}
+                    fill="url(#priceGradient)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Sentiment Radial / Donut Gauge (1 col) */}
+          <div className="col-span-1 bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-base font-bold text-gray-900">Sentiment Distribution</h3>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">
+                FinBERT
+              </span>
+            </div>
+
+            {/* Circular Donut Visual */}
+            <div className="flex items-center justify-center my-4 relative">
+              <svg className="w-36 h-36 transform -rotate-90">
+                <circle
+                  cx="72"
+                  cy="72"
+                  r={donutRadius}
+                  stroke="#f3f4f6"
+                  strokeWidth="10"
+                  fill="transparent"
+                />
+                <circle
+                  cx="72"
+                  cy="72"
+                  r={donutRadius}
+                  stroke="#111827"
+                  strokeWidth="10"
+                  fill="transparent"
+                  strokeDasharray={donutCircumference}
+                  strokeDashoffset={donutBullOffset}
+                  strokeLinecap="round"
+                  className="transition-all duration-1000 ease-out"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-2xl font-black text-gray-900">{bullPct}%</span>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Bullish</span>
+              </div>
+            </div>
+
+            {/* Bull / Neutral / Bear Progress Breakdown */}
+            <div className="space-y-2.5">
+              <div>
+                <div className="flex justify-between text-xs font-semibold text-gray-600 mb-1">
+                  <span>Bullish Bias</span>
+                  <span>{bullPct}%</span>
+                </div>
+                <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                  <div className="h-full bg-gray-900 rounded-full" style={{ width: `${bullPct}%` }} />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-xs font-semibold text-gray-600 mb-1">
+                  <span>Bearish Pressure</span>
+                  <span>{bearPct}%</span>
+                </div>
+                <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                  <div className="h-full bg-red-500 rounded-full" style={{ width: `${bearPct}%` }} />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-xs font-semibold text-gray-600 mb-1">
+                  <span>Neutral Discussion</span>
+                  <span>{neutralPct}%</span>
+                </div>
+                <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                  <div className="h-full bg-gray-400 rounded-full" style={{ width: `${neutralPct}%` }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 3 Source Intelligence Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <SourceCard
+            title="Reddit Community"
+            icon={MessageSquare}
+            pct={redditPct}
+            count={data?.sources?.reddit?.posts?.length || 0}
+          />
+          <SourceCard
+            title="Financial News"
+            icon={Newspaper}
+            pct={newsPct}
+            count={data?.sources?.news?.articles?.length || 0}
+          />
+          <SourceCard
+            title="StockTwits Stream"
+            icon={Hash}
+            pct={stPct}
+            count={data?.sources?.stocktwits?.posts?.length || 0}
+          />
+        </div>
+
+        {/* Live Signal Feed & Peer Correlation Map */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* Live Feed (5 cols) */}
+          <div className="col-span-1 lg:col-span-5 bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col h-[440px]">
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                <h3 className="text-base font-bold text-gray-900">Live Forensic Feed</h3>
+              </div>
+              <span className="text-xs text-gray-400 font-semibold">Real-time Stream</span>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+              {data?.feed?.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="p-3.5 rounded-2xl bg-gray-50/70 hover:bg-gray-100/80 transition-all border border-gray-100"
+                >
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${
+                      item.source === 'news'
+                        ? 'bg-blue-50 text-blue-700'
+                        : item.source === 'reddit'
+                        ? 'bg-orange-50 text-orange-700'
+                        : 'bg-emerald-50 text-emerald-700'
+                    }`}>
+                      {item.source}
+                    </span>
+                    <span className="text-[10px] text-gray-400 font-mono">
+                      {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-800 font-medium leading-relaxed">
+                    {item.text}
+                  </p>
+                </div>
+              ))}
+              {(!data?.feed || data.feed.length === 0) && (
+                <div className="text-center py-12 text-gray-400 text-xs font-semibold">
+                  No live messages for this ticker currently.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Sector Correlation Map (7 cols) */}
+          <div className="col-span-1 lg:col-span-7 bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col h-[440px]">
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-100">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">Peer Sector Correlation Map</h3>
+                <p className="text-xs text-gray-400 mt-0.5">30-day relative strength across key market sectors</p>
+              </div>
+            </div>
+
+            <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {heatmap && heatmap.map((cell, idx) => {
+                const pct = (cell.change_1m * 100).toFixed(1);
+                const isPositive = cell.change_1m >= 0;
+                return (
+                  <div
+                    key={idx}
+                    className={`rounded-2xl p-4 flex flex-col justify-between transition-all duration-200 hover:scale-[1.02] ${
+                      isPositive
+                        ? 'bg-gray-900 text-white shadow-sm'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}
+                  >
+                    <span className="text-xs font-bold tracking-tight">{cell.sector}</span>
+                    <div className="mt-2 flex items-baseline justify-between">
+                      <span className={`text-lg font-black ${isPositive ? 'text-emerald-400' : 'text-gray-900'}`}>
+                        {isPositive ? '+' : ''}{pct}%
+                      </span>
+                      <span className={`text-[10px] font-bold ${isPositive ? 'text-gray-400' : 'text-gray-500'}`}>
+                        1M
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );

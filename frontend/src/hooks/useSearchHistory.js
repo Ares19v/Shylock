@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const KEY = 'shylock_history';
+const KEY = 'delphi_history';
 const MAX = 10;
 
 export function useSearchHistory() {
