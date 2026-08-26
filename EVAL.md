@@ -1,4 +1,4 @@
-# EVAL — Shylock
+# EVAL — Delphi
 
 > **Evaluation Date:** 2026-05-29
 > **Evaluator:** Automated Portfolio Review
@@ -8,7 +8,7 @@
 
 ## 1. Project Purpose & Problem Statement
 
-Shylock is a real-time financial market sentiment intelligence platform that aggregates signals from Reddit, financial news (NewsAPI), and Finnhub, runs them through a domain-specific NLP model (FinBERT), and surfaces actionable directional signals — Bullish, Bearish, or Neutral — for any given ticker. It targets retail traders and finance enthusiasts who want to synthesize social media sentiment with technical indicators without paying for Bloomberg Terminal access.
+Delphi is a real-time financial market sentiment intelligence platform that aggregates signals from Reddit, financial news (NewsAPI), and Finnhub, runs them through a domain-specific NLP model (FinBERT), and surfaces actionable directional signals — Bullish, Bearish, or Neutral — for any given ticker. It targets retail traders and finance enthusiasts who want to synthesize social media sentiment with technical indicators without paying for Bloomberg Terminal access.
 
 The system goes beyond raw sentiment by computing a weighted composite directional signal that incorporates FinBERT sentiment (60%), RSI momentum (25%), and MACD trend (15%). This hybrid approach — transformer NLP + classical technical analysis — is a meaningful differentiator from simpler "Twitter sentiment" tools.
 
@@ -16,7 +16,7 @@ The system goes beyond raw sentiment by computing a weighted composite direction
 
 ## 2. Technical Architecture
 
-Shylock is a FastAPI/React microservice stack with a clear backend domain separation:
+Delphi is a FastAPI/React microservice stack with a clear backend domain separation:
 
 **Backend (FastAPI, Python 3.10+)**:
 - `scrapers/` — Reddit (public JSON API, no auth required as fallback), NewsAPI, and Finnhub data ingestion via `httpx`.
@@ -113,7 +113,7 @@ Shylock is a FastAPI/React microservice stack with a clear backend domain separa
 
 ## 9. Verdict
 
-Shylock is the most feature-rich project in the portfolio and demonstrates impressive scope: FinBERT NLP, technical indicator computation (RSI/MACD), multi-source data aggregation, stock screening, compare mode, a Groq chatbot, and a PDF export — all in one system. The model selection (FinBERT) shows domain research awareness that sets it apart from generic sentiment demos. The critical gap is the absence of any backtesting or validation that the composite signal actually has predictive value; without this disclaimer, the "directional signal" feature carries implicit trading advice connotations that need to be managed carefully.
+Delphi is the most feature-rich project in the portfolio and demonstrates impressive scope: FinBERT NLP, technical indicator computation (RSI/MACD), multi-source data aggregation, stock screening, compare mode, a Groq chatbot, and a PDF export — all in one system. The model selection (FinBERT) shows domain research awareness that sets it apart from generic sentiment demos. The critical gap is the absence of any backtesting or validation that the composite signal actually has predictive value; without this disclaimer, the "directional signal" feature carries implicit trading advice connotations that need to be managed carefully.
 
 ---
 <p align="center">Made by Devansh Tyagi @ 2026</p>

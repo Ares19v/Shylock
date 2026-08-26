@@ -16,9 +16,9 @@ load_dotenv()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Initialize MCP (Compulsory Interoperability)
-mcp = FastMCP("Shylock-Market-Core")
+mcp = FastMCP("Delphi-Market-Core")
 
-app = FastAPI(title="Shylock Quant Engine")
+app = FastAPI(title="Delphi Quant Engine")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
@@ -53,7 +53,7 @@ def get_institutional_analytics(ticker: str):
 def get_market_sentiment_scan(ticker: str):
     """MCP Tool: Performs a full Quant + Sentiment scan on a ticker."""
     metrics = get_institutional_analytics(ticker)
-    return f"Shylock Quant Scan [{ticker}]: Price ${metrics['price']}, RSI {metrics['rsi']}, Signal {metrics['macd_signal']}."
+    return f"Delphi Quant Scan [{ticker}]: Price ${metrics['price']}, RSI {metrics['rsi']}, Signal {metrics['macd_signal']}."
 
 # --- 5. THE LIVE ENGINE ---
 @app.websocket("/ws/{client_id}")
@@ -87,11 +87,11 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                     {"role": "system", "content": "You are a Cold, Data-Driven Hedge Fund Analyst. No fluff. Strictly technical."},
                     {"role": "user", "content": f"Analyze {ticker}. Quant: {json.dumps(quant)}. BERT Sentiment: {sentiment_label}."}
                 ],
-                model="llama-3.3-70b-versatile", stream=True
+                model="openai/gpt-oss-20b", stream=True
             )
             for chunk in chat:
                 if chunk.choices[0].delta.content:
-                    await websocket.send_text(json.dumps({"type": "synthesis", "agent": "Shylock", "message": chunk.choices[0].delta.content}))
+                    await websocket.send_text(json.dumps({"type": "synthesis", "agent": "Delphi", "message": chunk.choices[0].delta.content}))
 
     except WebSocketDisconnect:
         pass
