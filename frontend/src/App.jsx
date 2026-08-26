@@ -75,13 +75,13 @@ export default function App() {
   const { history, addToHistory, clearHistory } = useSearchHistory();
 
   // Profile Drawer States
-  const [userName, setUserName] = useState(() => localStorage.getItem('shylock_username') || (user?.username || 'Devansh Tyagi'));
-  const [userRole, setUserRole] = useState(() => localStorage.getItem('shylock_role') || 'Chief Intelligence Analyst');
-  const [profilePic, setProfilePic] = useState(() => localStorage.getItem('shylock_pfp') || null);
+  const [userName, setUserName] = useState(() => localStorage.getItem('delphi_username') || (user?.username || 'Devansh Tyagi'));
+  const [userRole, setUserRole] = useState(() => localStorage.getItem('delphi_role') || 'Chief Intelligence Analyst');
+  const [profilePic, setProfilePic] = useState(() => localStorage.getItem('delphi_pfp') || null);
 
   // Notification Center
   const [notifications, setNotifications] = useState(() => {
-    const saved = localStorage.getItem('shylock_notifications');
+    const saved = localStorage.getItem('delphi_notifications');
     if (saved) {
       try { return JSON.parse(saved); } catch { /* fallback */ }
     }
@@ -93,7 +93,7 @@ export default function App() {
   });
 
   useEffect(() => {
-    localStorage.setItem('shylock_notifications', JSON.stringify(notifications));
+    localStorage.setItem('delphi_notifications', JSON.stringify(notifications));
   }, [notifications]);
 
   useEffect(() => {
@@ -102,8 +102,8 @@ export default function App() {
 
   const handleProfileSave = (e) => {
     e.preventDefault();
-    localStorage.setItem('shylock_username', userName);
-    localStorage.setItem('shylock_role', userRole);
+    localStorage.setItem('delphi_username', userName);
+    localStorage.setItem('delphi_role', userRole);
     setShowProfileModal(false);
   };
 
@@ -114,7 +114,7 @@ export default function App() {
       reader.onloadend = () => {
         const base64 = reader.result;
         setProfilePic(base64);
-        localStorage.setItem('shylock_pfp', base64);
+        localStorage.setItem('delphi_pfp', base64);
       };
       reader.readAsDataURL(file);
     }
@@ -149,7 +149,7 @@ export default function App() {
                 <TrendingUp className="w-5 h-5 text-emerald-400" />
               </div>
               <div>
-                <h1 className="text-xl font-bold tracking-tight text-gray-900 leading-none">SHYLOCK</h1>
+                <h1 className="text-xl font-bold tracking-tight text-gray-900 leading-none">DELPHI</h1>
                 <p className="text-[11px] font-medium text-gray-400 mt-1">Forensic Intelligence</p>
               </div>
             </div>

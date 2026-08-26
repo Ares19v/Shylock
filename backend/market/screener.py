@@ -45,7 +45,7 @@ def run_screener(sector: str = None, signal: str = None) -> list:
 
     raw = yf.download(
         tickers, period="1mo", interval="1d",
-        progress=False, auto_adjust=True, group_by="ticker",
+        progress=False, auto_adjust=True,
     )
 
     results = []
@@ -53,7 +53,14 @@ def run_screener(sector: str = None, signal: str = None) -> list:
         try:
             if len(tickers) == 1:
                 closes = raw["Close"].dropna()
+            elif isinstance(raw.columns, pd.MultiIndex):
+                # Newer yfinance: columns are (field, ticker) MultiIndex
+                if ("Close", ticker) in raw.columns:
+                    closes = raw[("Close", ticker)].dropna()
+                else:
+                    continue
             else:
+                # Older yfinance: columns are ticker-level grouped
                 closes = raw[ticker]["Close"].dropna() if ticker in raw else pd.Series(dtype=float)
 
             if len(closes) < 3:

@@ -24,7 +24,7 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Shylock Sentiment Engine", version="2.0.0")
+app = FastAPI(title="Delphi Sentiment Engine", version="2.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
@@ -158,7 +158,7 @@ async def websocket_synthesis(websocket: WebSocket, client_id: str):
     """Streaming Groq synthesis for a given analysis payload."""
     await websocket.accept()
     await websocket.send_text(json.dumps({
-        "type": "system", "message": "Shylock Synthesis Engine connected."
+        "type": "system", "message": "Delphi Synthesis Engine connected."
     }))
 
     try:
@@ -188,7 +188,7 @@ async def websocket_synthesis(websocket: WebSocket, client_id: str):
                     {"role": "system", "content": "You are a cold, precise financial analyst. No fluff."},
                     {"role": "user", "content": prompt},
                 ],
-                model="llama-3.3-70b-versatile",
+                model="openai/gpt-oss-20b",
                 stream=True,
             )
 
@@ -264,10 +264,10 @@ class ChatMsg(BaseModel):
 class ChatReq(BaseModel):
     messages: List[ChatMsg]
 
-SYSTEM_PROMPT = """You are SHYLOCK AI, the intelligent assistant for the Shylock Financial Intelligence platform.
+SYSTEM_PROMPT = """You are Delphi AI, the intelligent assistant for the Delphi Financial Intelligence platform.
 Help users understand: the platform features (Analysis, Watchlist, Screener, Compare, Journal), how sentiment analysis works, how to interpret RSI/MACD signals, and basic financial concepts.
 Be concise and professional. Keep responses under 150 words unless detail is needed.
-Do NOT give specific investment advice. Always note Shylock is for informational purposes only."""
+Do NOT give specific investment advice. Always note Delphi is for informational purposes only."""
 
 @app.post("/chat")
 async def chat(req: ChatReq):
@@ -275,7 +275,7 @@ async def chat(req: ChatReq):
     messages += [{"role": m.role, "content": m.content} for m in req.messages]
     response = groq_client.chat.completions.create(
         messages=messages,
-        model="llama-3.3-70b-versatile",
+        model="openai/gpt-oss-20b",
         max_tokens=300,
     )
     return {"reply": response.choices[0].message.content}
