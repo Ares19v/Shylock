@@ -1,30 +1,18 @@
 @echo off
-chcp 65001 >nul
-color 0F
-cls
+title Shylock — AI Financial Forensic Intelligence
+color 09
 
 echo.
-echo     [97m███████╗██╗  ██╗██╗   ██╗██╗      ██████╗  ██████╗██╗  ██╗[0m
-echo     [97m██╔════╝██║  ██║╚██╗ ██╔╝██║     ██╔═══██╗██╔════╝██║ ██╔╝[0m
-echo     [97m███████╗███████║ ╚████╔╝ ██║     ██║   ██║██║     █████╔╝ [0m
-echo     [97m╚════██║██╔══██║  ╚██╔╝  ██║     ██║   ██║██║     ██╔═██╗ [0m
-echo     [97m███████║██║  ██║   ██║   ███████╗╚██████╔╝╚██████╗██║  ██╗[0m
-echo     [97m╚══════╝╚═╝  ╚═╝   ╚═╝   ╚══════╝ ╚═════╝  ╚═════╝╚═╝  ╚═╝[0m
+echo  ███████╗██╗  ██╗██╗   ██╗██╗      ██████╗  ██████╗██╗  ██╗
+echo  ██╔════╝██║  ██║╚██╗ ██╔╝██║     ██╔═══██╗██╔════╝██║ ██╔╝
+echo  ███████╗███████║ ╚████╔╝ ██║     ██║   ██║██║     █████╔╝ 
+echo  ╚════██║██╔══██║  ╚██╔╝  ██║     ██║   ██║██║     ██╔═██╗ 
+echo  ███████║██║  ██║   ██║   ███████╗╚██████╔╝╚██████╗██║  ██╗
+echo  ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚══════╝ ╚═════╝  ╚═════╝╚═╝  ╚═╝
 echo.
-echo     [90m  Market Sentiment Intelligence Platform[0m
-echo.
+echo  AI Financial Forensic Intelligence Platform
 echo  ══════════════════════════════════════════════════════════════
 echo.
-
-:: ─── Check backend venv ────────────────────────────────────────────────────
-if not exist "backend\venv\Scripts\activate.bat" (
-    color 0C
-    echo  [ERROR] Backend virtual environment not found.
-    echo  Run INSTALL.bat first.
-    echo.
-    pause
-    exit /b 1
-)
 
 :: ─── Check node_modules ────────────────────────────────────────────────────
 if not exist "frontend\node_modules" (
@@ -45,8 +33,11 @@ if not exist "backend\.env" (
     echo.
 )
 
+set "VENV_ACT="
+if exist "backend\venv\Scripts\activate.bat" set "VENV_ACT=call venv\Scripts\activate.bat & "
+
 echo  [1/2] Launching Backend  ^(FastAPI — Port 8001^)...
-start "Shylock | Backend" cmd /k "color 0A & cd backend & call venv\Scripts\activate.bat & python -m uvicorn main:app --reload --port 8001"
+start "Shylock | Backend" cmd /k "color 0A & cd backend & %VENV_ACT%python -m uvicorn main:app --reload --port 8001"
 
 echo  [2/2] Launching Frontend ^(React   — Port 5173^)...
 start "Shylock | Frontend" cmd /k "color 0B & cd frontend & npm run dev"
