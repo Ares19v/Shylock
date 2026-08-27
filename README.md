@@ -1,5 +1,8 @@
 # DELPHI — Market Sentiment Intelligence
 
+
+[![CI](https://github.com/Ares19v/Delphi/actions/workflows/ci.yml/badge.svg)](https://github.com/Ares19v/Delphi/actions/workflows/ci.yml)
+
 <div align="center">
 
 ```
