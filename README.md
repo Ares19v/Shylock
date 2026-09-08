@@ -34,6 +34,22 @@ Like the Oracle at Delphi — which synthesized cryptic signals from many hidden
 
 ---
 
+## 🖥️ Platform Interface
+
+<p align="center">
+  <img src="assets/Delphi_1.png" alt="Delphi Sentiment & Forensic Analysis Dashboard" width="100%" style="border-radius: 8px; border: 1px solid #30363d;" />
+  <br>
+  <em>Sentiment & Forensic Intelligence (NVDA): Real-time FinBERT sentiment aggregation (40% Neutral), market direction (UP), RSI 60.39 momentum, and price flow curve.</em>
+</p>
+
+<p align="center">
+  <img src="assets/Delphi_2.png" alt="Delphi Live Forensic Feed & Sector Correlation Map" width="100%" style="border-radius: 8px; border: 1px solid #30363d;" />
+  <br>
+  <em>Forensic Telemetry & Peer Sector Map: Source breakdown (News, Reddit, StockTwits), live news article stream, and 30-day sector relative strength correlation.</em>
+</p>
+
+---
+
 ## Features
 
 | Feature | Description |
